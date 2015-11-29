@@ -44,9 +44,37 @@
 
 ## Building an SSL Development Environment ##
 
+#### The first step is to create a certificate ####
+
 The command to create a .pfx file is the following:
 
 ```
 pvk2pfx.exe -pvk DevRoot.pvk -spc DevRoot.cer -pfx DevRoot.pfx
 ```
 
+A .pfx file (personal information exchange file) facilitates the process of
+importing and exporting certificates from/to the Windows certificate repository.
+
+#### The second step is to trust the created certificate ####
+
+By only making the root certificate trusted, one can trust all certificates
+derived from that.
+
+	- use 'mmc' - Microsoft Manager Console
+	- Add the certificates snap-in
+	- If a web server, select computer account
+	- Click OK
+
+The certificate can be trusted by importing the certificate file (*.cer) into the
+*'Trusted Root Certification Authorities\Certificates'* folder.
+
+Then, importing the actual certificate to *Personal\Certificates* does the trick
+to make IIS do SSL. **Important**: The certificate imported must be of type ***.pfx**.
+
+Making IIS use the SSL certificate doesn't solve the issue because the browsers don't
+know how to use those certificates. To solve that, add the following line to the
+C:\Windows\System32\etc\hosts file:
+
+```
+127.0.0.1 <certification_name>
+```
