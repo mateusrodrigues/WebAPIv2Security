@@ -78,3 +78,66 @@ C:\Windows\System32\etc\hosts file:
 ```
 127.0.0.1 <certification_name>
 ```
+
+## Self-hosting Command Line tools ##
+
+```
+netsh http add
+```
+
+- **urlaclr**: Creating http listeners
+- **sslcert**: Creating a binding between the listener and an SSL certificate
+
+## Using .NET APIs to interact with Certificates ##
+
+Using Thinktecture.IdentityModel.Core nuget package:
+
+```csharp
+// By default, this API refuses to load untrusted/invalid certificates
+var cert = X509.LocalMachine
+				.My
+				.SubjectDistinguishedName
+				.Find("CN=serverdev", false) // Load it even if you think it's not okay
+				.First();
+
+// Validation certificates by providing policies
+var chain = new X509Chain();
+var policy = new X509ChainPolicy
+{
+	RevocationFlag = X509RevocationFlag.EntireChain,
+	RevocationMode = X509RevocationMode.Online,
+	UrlRetrievalTimeout = 60,
+	VerificationFlags = X509VerificationFlags.IgnoreNotTimeValid
+};
+
+chain.ChainPolicy = policy;
+
+if (!chain.Build())
+{
+	// Something is up with the certificates
+	foreach (var element in chain.ChainElements)
+	{
+		foreach (var status in element.ChainElementStatus)
+		{
+			Console.WriteLine(status.StatusInformation);
+		}
+	}
+}
+
+var validator = X509CertificateValidator.ChainTrust;
+validator.Validate(cert); // Goes up the chain to see if the root certificate is trusted.
+
+validator = X509CertificateValidator.PeerTrust; // Checks trusted peers
+validator = X509CertificateValidator.PeerOrChainTrust; // Both
+```
+
+## Resources ##
+
+- Thinktecture.IdentityModel
+	- http://github.com/thinktecture/Thinktecture.IdentityModel
+- HttpConfig
+	- http://www.stevestechspot.com/ABetterHttpcfg.aspx
+- Netsh documentation
+	- MSDN Library link
+- Fiddler
+	- http://www.telerik.com/download/fiddler
